@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rbac-sa
+  namespace: rbac-demo
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rbac-sa-full-access
+  namespace: rbac-demo
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["GET"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rbac-sa-view
+  namespace: rbac-demo
+subjects:
+- kind: ServiceAccount
+  name: rbac-sa
+  namespace: rbac-demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-sa-full-access

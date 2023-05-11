@@ -1,0 +1,41 @@
+# 1. Deploy as is
+# 2. Change config map
+# 3. Increase replicas
+# 4. Check response of old pods vs new
+
+# kubectl expose deployment echo-deployment --port=5678 --name=echo-dep-service
+# curl http://127.0.0.1:8001/api/v1/namespaces/default/services/echo-dep-service/proxy/
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-deployment
+  labels:
+    app: echo
+spec:
+  replicas: 3
+  #replicas: 4
+  selector:
+    matchLabels:
+      app: echo
+  template:
+    metadata:
+      labels:
+        app: echo
+    spec:
+      containers:
+      - name: echo
+        image: hashicorp/http-echo
+        args:
+        - --text=$(LOG_LEVEL)
+        ports:
+        - containerPort: 5678
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm-demo
+data:
+  log_level: "INFO"
+  #log_level: "WARN"
+ 

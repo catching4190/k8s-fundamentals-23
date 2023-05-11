@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm-demo
+data:
+  # property-like keys; each key maps to a simple value
+  log_level: "INFO"
+  
+  # file-like keys
+  app.properties: |
+    tracing.sampler.type=probabilistic
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-demo-pod
+spec:
+  containers:
+    - name: demo
+      image: alpine
+      command: ["sleep", "3600"]
+      env:
+        # Define the environment variable
+        - name: LOG_LEVEL # ENV VAR name
+          valueFrom:
+            configMapKeyRef:
+              name: cm-demo           # The ConfigMap this value comes from.
+              key: log_level          # The key to fetch.
+      # All rows below belongs to "config map as a mounted file" approach
+      volumeMounts:
+        # Define the volume mount
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+  volumes:
+  # You set volumes at the Pod level, then mount them into containers inside that Pod
+  - name: config
+    configMap:
+      # Provide the name of the ConfigMap you want to mount.
+      name: cm-demo
+      # An array of keys from the ConfigMap to create as files
+      items:
+      - key: "app.properties"
+        path: "app.properties" #pod level path

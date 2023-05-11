@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dummy-pod
+spec:
+  containers:
+    - name: fortune
+      image: piegsaj/fortune
+      env:
+      - name: DELAY
+        value: "60"

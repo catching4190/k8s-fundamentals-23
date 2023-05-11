@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: task-1-secret
+type: Opaque
+stringData:
+  username: bingo
+  password: va0s9dv^
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-1-deployment
+  labels:
+    app: echo
+spec:
+  selector:
+    matchLabels:
+      app: echo
+  template:
+    metadata:
+      labels:
+        app: echo
+    spec:
+      containers:
+        - name: echo
+          image: ealen/echo-server
+          ports:
+            - containerPort: 80
+          envFrom: # import all with original names
+            - secretRef:
+                name: task-1-secret
+          env:
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: task-1-secret
+                  key: username
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: task-1-secret
+                  key: password
