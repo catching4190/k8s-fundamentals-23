@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: task-2
+spec:
+  schedule: "3 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: task-2-pod
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            command:
+             # - nslookup task-1-service.default.svc.cluster.local
+              - /bin/sh
+              - -c
+              - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure

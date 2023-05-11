@@ -355,6 +355,40 @@ Output:
 }
 ```
 
+Cleanup:
+
+```bash
+kubectl delete -f task1.yaml
+kubectl delete service task-1-service
+```
+
+### Task 2
+
+https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+
+[task2.yaml](./02/task2.yaml)
+
+Magic url:
+
+<service name>.default.svc.cluster.local
+
+nslookup task-1-service.default.svc.cluster.local
+
+```bash
+kubectl create -f task1.yaml
+kubectl create -f task2.yaml
+
+# Wait 5-6 min
+kubectl get jobs --all-namespaces
+kubectl get cronjobs
+```
+
+Cleanup
+
+```bash
+kubectl delete -f task2.yaml
+```
+
 # Workshop 3
 
 ```bash
