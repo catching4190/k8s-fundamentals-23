@@ -286,6 +286,8 @@ curl http://127.0.0.1:8001/api/v1/namespaces/default/services/echo-deploy-servic
 
 ### Task 1
 
+[task1.yaml](./02/task1.yaml)
+
 ```bash
 kubectl apply -f task1.yaml
 kubectl get deploy

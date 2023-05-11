@@ -27,9 +27,6 @@ spec:
           image: ealen/echo-server
           ports:
             - containerPort: 80
-          envFrom: # import all with original names
-            - secretRef:
-                name: task-1-secret
           env:
             - name: USERNAME
               valueFrom:
