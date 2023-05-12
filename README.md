@@ -231,6 +231,8 @@ kubectl logs <pod-name>
 
 ## Object specs
 
+https://kubernetes.io/docs/concepts/workloads/
+
 ```bash
 # List of resources
 kubectl api-resources --namespaced=true|false
@@ -368,11 +370,29 @@ https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
 
 [task2.yaml](./02/task2.yaml)
 
-Magic url:
+Magic url to access to other service from container:
 
-<service name>.default.svc.cluster.local
+    <service name>.default.svc.cluster.local
 
+Possible commands for "busybox" image:
+
+```bash
 nslookup task-1-service.default.svc.cluster.local
+# or
+wget task-1-service.default.svc.cluster.local
+# or
+curl task-1-service.default.svc.cluster.local
+```
+
+> Notice that each element of `command:` is a argument
+
+Helper to setup cron schedule:
+
+https://crontab.guru/
+
+To run job each 3 minutes:
+
+    0/3 * * * *
 
 ```bash
 kubectl create -f task1.yaml

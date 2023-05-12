@@ -3,9 +3,10 @@ kind: CronJob
 metadata:
   name: task-2
 spec:
-  schedule: "3 * * * *"
+  schedule: "0/3 * * * *"
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 180
       template:
         spec:
           containers:
@@ -13,8 +14,6 @@ spec:
             image: busybox:1.28
             imagePullPolicy: IfNotPresent
             command:
-             # - nslookup task-1-service.default.svc.cluster.local
-              - /bin/sh
-              - -c
-              - date; echo Hello from the Kubernetes cluster
+              - wget
+              - task-1-service.default.svc.cluster.local
           restartPolicy: OnFailure
