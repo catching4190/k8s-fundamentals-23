@@ -433,3 +433,102 @@ kubectl delete -f dep-with-pv.yaml
 
 kubectl delete service dep-with-pv-service
 ```
+
+## Task 1
+
+https://kubernetes.io/docs/concepts/configuration/configmap/
+
+```bash
+# Deploy
+kubectl apply -f v1.yaml
+kubectl expose deployment html-deployment --port=80 --name=html-service
+kubectl get services
+kubectl proxy
+curl http://127.0.0.1:8001/api/v1/namespaces/default/services/html-service/proxy/
+
+# Cleanup
+kubectl delete service html-service
+kubectl delete -f v1.yaml
+```
+
+## Task 2
+
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistent-volumes
+
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims
+
+https://kubernetes.io/docs/reference/labels-annotations-taints/#change-cause
+
+https://julien-chen.medium.com/k8s-how-to-mount-local-directory-persistent-volume-to-kubernetes-pods-of-docker-desktop-for-mac-b72f3ca6b0dd
+
+https://itnext.io/goodbye-docker-desktop-hello-minikube-3649f2a1c469
+
+https://thospfuller.com/2020/12/09/learn-how-to-mount-a-local-drive-in-a-pod-in-minikube-2021/
+
+https://minikube.sigs.k8s.io/docs/handbook/mount/#driver-mounts
+
+https://minikube.sigs.k8s.io/docs/handbook/filesync/
+
+```yaml
+hostPath:
+    path: "/run/desktop/mnt/host/c/www" #for windows prefix is /run/desktop/mnt/host/<disk-letter>/<local-path-to-folder> 
+    path: "/mnt/data" #For linux should be trivial
+    path: "/tmp" # For Mac -Filesharing https://julien-chen.medium.com/k8s-how-to-mount-local-directory-persistent-volume-to-kubernetes-pods-of-docker-desktop-for-mac-b72f3ca6b0dd
+```
+
+```bash
+# ❌  Exiting due to MK_UNIMPLEMENTED: minikube mount is not currently implemented with the builtin network on QEMU, try starting minikube with '--network=socket_vmnet'
+minikube mount $HOME/Learning/k8s-23/03/v2:/www
+
+# Workaround: I use solution from here https://minikube.sigs.k8s.io/docs/handbook/filesync/
+# just copy files to ~/.minikube/files/www folder and it mounted as /www in the minikube fs
+
+# Check available mounted folders (for file sharing solution, just check your expected path starts from root folder, e.g. /www)
+minikube ssh
+df -hl
+
+# 1. Deploy
+kubectl apply -f v2.yaml
+kubectl expose deployment html-deployment --port=80 --name=html-service
+kubectl get services
+kubectl exec html-deployment-6d969f6859-gmc2v -it -- /bin/sh
+
+kubectl describe deployment html-deployment
+
+kubectl proxy
+curl http://127.0.0.1:8001/api/v1/namespaces/default/services/html-service/proxy/
+
+# 2. Change index.html and restart minikube
+minikube start
+
+# 3. Change app-revision and resources and redeploy via apply
+kubectl apply -f v2.yaml
+
+# Check deployment changes, e.g. labels, requested resources
+kubectl describe deployment html-deployment
+
+# Check response
+curl http://127.0.0.1:8001/api/v1/namespaces/default/services/html-service/proxy/
+
+# Check rollout history
+kubectl rollout history deployment html-deployment
+
+# Rollback
+kubectl rollout undo deployment html-deployment
+
+# Check replica sets
+kubectl get rs
+
+
+# Edit in vim
+kubectl edit --record deployment html-deployment
+
+# Change annotation
+kubectl annotate deployments html-deployment description="My favorite deployment with my app"
+kubectl annotate deployments html-deployment kubernetes.io/change-cause="Increase cpu and memo"
+
+
+# Cleanup
+kubectl delete service html-service
+kubectl delete -f v2.yaml
+```

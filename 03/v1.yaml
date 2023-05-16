@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: html-cm
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Halo</title>
+    </head>
+    <body>
+        Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam repudiandae iure quisquam, veritatis delectus repellat quam omnis tempora eum est explicabo qui exercitationem dolor incidunt totam, adipisci quaerat quasi nihil?
+    </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: html-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: html-app
+  template:
+    metadata:
+      name: html-pod
+      labels:
+        app: html-app
+        app-revision: v1
+    spec:
+      containers:
+        - name: html-app
+          image: nginx
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "0.1"
+            limits:
+              memory: "128Mi"
+              cpu: "0.5"
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html-volume
+              mountPath: "/usr/share/nginx/html"
+              readOnly: true
+      volumes:
+        - name: html-volume
+          configMap:
+            name: html-cm
+            items:
+              - key: "index.html"
+                path: "index.html"
