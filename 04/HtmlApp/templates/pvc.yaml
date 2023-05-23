@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name:  {{ "pvc-" }}{{ include "HtmlApp.fullname" . }}
+  labels:
+    {{- include "HtmlApp.labels" . | nindent 4 }}
+spec:
+  storageClassName: {{ .Values.storage.className }}
+  accessModes:
+    - {{ .Values.storage.accessModes }}
+  resources:
+    requests:
+      storage: {{ .Values.volume.requestedCapacity }}

@@ -532,3 +532,115 @@ kubectl annotate deployments html-deployment kubernetes.io/change-cause="Increas
 kubectl delete service html-service
 kubectl delete -f v2.yaml
 ```
+
+# Workshop 4 - Helm Charts
+
+https://helm.sh/docs/chart_template_guide/getting_started/
+
+
+```bash
+brew install helm
+
+helm create HtmlApp
+```
+
+## Syntax
+
+{{ <operator> <arguments?> <scope?> }}
+
+### Operators
+
+https://helm.sh/docs/chart_template_guide/function_list/
+
+### Inlcude
+
+https://helm.sh/docs/howto/charts_tips_and_tricks/#using-the-include-function
+
+### Variables
+
+https://helm.sh/docs/chart_template_guide/variables/
+
+It gets value from _helpers.tpl > search "HtmlApp.fullname"
+
+```go
+name: {{ include "HtmlApp.fullname" . }}
+```
+
+### Scope
+
+Via dot argument `.` or `with` operator
+
+```go
+spec:
+    {{- with .Values.imagePullSecrets }}
+    imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+```
+
+### Whitespaces
+
+https://helm.sh/docs/chart_template_guide/control_structures/#controlling-whitespace
+
+Means remove trailing spaces before or after string
+
+```go
+// before
+{{- toYaml . | nindent 8 }}
+// after
+{{ toYaml . | nindent 8 -}}
+// both
+{{- toYaml . | nindent 8 -}}
+```
+
+### Piping
+
+https://helm.sh/docs/chart_template_guide/functions_and_pipelines/#pipelines
+
+```go
+{{- include "HtmlApp.labels" . | nindent 4 }}
+```
+
+### toYaml
+
+https://helm.sh/docs/howto/charts_tips_and_tricks/#using-the-include-function
+
+### Magic shortcut
+
+In VSCode:
+
+Command + P > Helm: Convert to template parameter
+
+### Check configuration
+
+```bash
+helm lint ./HtmlApp
+```
+
+### Dry run
+
+```bash
+helm install --dry-run chart-test ./HtmlApp
+```
+
+### Install
+
+```bash
+helm install chart-test ./HtmlApp
+```
+
+### Uninstall
+
+```bash
+helm uninstall chart-test
+```
+
+### Upgrade
+
+```bash
+# override value
+helm upgrade chart-test ./HtmlApp --set "replicaCount=2"
+
+# override by file and, additionally, by value
+helm upgrade chart-test ./HtmlApp -f ./HtmlApp/values-dev.yaml --set "replicaCount=2"
+```

@@ -1,0 +1,313 @@
+❯ helm install --dry-run chart-test ./HtmlApp
+
+NAME: chart-test
+LAST DEPLOYED: Tue May 23 18:35:54 2023
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+HOOKS:
+---
+# Source: htmlapp/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "chart-test-htmlapp-test-connection"
+  labels:
+    helm.sh/chart: htmlapp-0.1.0
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['chart-test-htmlapp:80']
+  restartPolicy: Never
+MANIFEST:
+---
+# Source: htmlapp/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chart-test-htmlapp
+  labels:
+    helm.sh/chart: htmlapp-0.1.0
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: htmlapp/templates/pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-chart-test-htmlapp
+  labels:
+    helm.sh/chart: htmlapp-0.1.0
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  storageClassName: hostpath
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadOnlyMany
+  hostPath:
+    path: /www
+---
+# Source: htmlapp/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name:  pvc-chart-test-htmlapp
+  labels:
+    helm.sh/chart: htmlapp-0.1.0
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  storageClassName: hostpath
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 50Mi
+---
+# Source: htmlapp/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: chart-test-htmlapp
+  labels:
+    helm.sh/chart: htmlapp-0.1.0
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+---
+# Source: htmlapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chart-test-htmlapp
+  labels:
+    helm.sh/chart: htmlapp-0.1.0
+    app.kubernetes.io/name: htmlapp
+    app.kubernetes.io/instance: chart-test
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: htmlapp
+      app.kubernetes.io/instance: chart-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: htmlapp
+        app.kubernetes.io/instance: chart-test
+    spec:
+      serviceAccountName: chart-test-htmlapp
+      securityContext:
+        {}
+      containers:
+        - name: htmlapp
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: 128Mi
+            requests:
+              cpu: 0.3
+              memory: 64Mi
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: html-volume
+          persistentVolumeClaim:
+            claimName: pvc-chart-test-htmlapp
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=htmlapp,app.kubernetes.io/instance=chart-test" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+NAME: chart-test
+LAST DEPLOYED: Tue May 23 18:36:20 2023
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=htmlapp,app.kubernetes.io/instance=chart-test" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+❯ kubectl describe deployment chart-test
+
+Name:                   chart-test-htmlapp
+Namespace:              default
+CreationTimestamp:      Tue, 23 May 2023 18:36:20 +0300
+Labels:                 app.kubernetes.io/instance=chart-test
+                        app.kubernetes.io/managed-by=Helm
+                        app.kubernetes.io/name=htmlapp
+                        app.kubernetes.io/version=1.16.0
+                        helm.sh/chart=htmlapp-0.1.0
+Annotations:            deployment.kubernetes.io/revision: 1
+                        meta.helm.sh/release-name: chart-test
+                        meta.helm.sh/release-namespace: default
+Selector:               app.kubernetes.io/instance=chart-test,app.kubernetes.io/name=htmlapp
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:           app.kubernetes.io/instance=chart-test
+                    app.kubernetes.io/name=htmlapp
+  Service Account:  chart-test-htmlapp
+  Containers:
+   htmlapp:
+    Image:      nginx:1.16.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     500m
+      memory:  128Mi
+    Requests:
+      cpu:        300m
+      memory:     64Mi
+    Liveness:     http-get http://:http/ delay=0s timeout=1s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:http/ delay=0s timeout=1s period=10s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /usr/share/nginx/html from html-volume (ro)
+  Volumes:
+   html-volume:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  pvc-chart-test-htmlapp
+    ReadOnly:   false
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   chart-test-htmlapp-9d957f9fc (1/1 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  108s  deployment-controller  Scaled up replica set chart-test-htmlapp-9d957f9fc to 1
+
+
+❯ helm upgrade chart-test ./HtmlApp --set "replicaCount=2"
+
+Release "chart-test" has been upgraded. Happy Helming!
+NAME: chart-test
+LAST DEPLOYED: Tue May 23 18:41:26 2023
+NAMESPACE: default
+STATUS: deployed
+REVISION: 2
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=htmlapp,app.kubernetes.io/instance=chart-test" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace default port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+❯ kubectl describe deployment chart-test
+
+Name:                   chart-test-htmlapp
+Namespace:              default
+CreationTimestamp:      Tue, 23 May 2023 18:36:20 +0300
+Labels:                 app.kubernetes.io/instance=chart-test
+                        app.kubernetes.io/managed-by=Helm
+                        app.kubernetes.io/name=htmlapp
+                        app.kubernetes.io/version=1.16.0
+                        helm.sh/chart=htmlapp-0.1.0
+Annotations:            deployment.kubernetes.io/revision: 1
+                        meta.helm.sh/release-name: chart-test
+                        meta.helm.sh/release-namespace: default
+Selector:               app.kubernetes.io/instance=chart-test,app.kubernetes.io/name=htmlapp
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:           app.kubernetes.io/instance=chart-test
+                    app.kubernetes.io/name=htmlapp
+  Service Account:  chart-test-htmlapp
+  Containers:
+   htmlapp:
+    Image:      nginx:1.16.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     500m
+      memory:  128Mi
+    Requests:
+      cpu:        300m
+      memory:     64Mi
+    Liveness:     http-get http://:http/ delay=0s timeout=1s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:http/ delay=0s timeout=1s period=10s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /usr/share/nginx/html from html-volume (ro)
+  Volumes:
+   html-volume:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  pvc-chart-test-htmlapp
+    ReadOnly:   false
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   chart-test-htmlapp-9d957f9fc (2/2 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  5m14s  deployment-controller  Scaled up replica set chart-test-htmlapp-9d957f9fc to 1
+  Normal  ScalingReplicaSet  7s     deployment-controller  Scaled up replica set chart-test-htmlapp-9d957f9fc to 2 from 1
+
