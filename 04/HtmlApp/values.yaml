@@ -13,6 +13,7 @@ storage:
   capacity: 100Mi
   accessModes: ReadOnlyMany
   hostPath: "/www"
+  pvEnabled: true
 
 replicaCount: 1
 

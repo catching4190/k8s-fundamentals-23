@@ -53,8 +53,16 @@ spec:
               readOnly: {{ .Values.volume.readOnly }}
       volumes:
         - name: {{ .Values.volume.name }}
+          {{- if .Values.storage.pvEnabled }}
           persistentVolumeClaim:
             claimName: {{ "pvc-" }}{{ include "HtmlApp.fullname" . }}
+          {{- else }}
+          configMap:
+            name: {{ "cm-" }}{{ include "HtmlApp.fullname" . }}
+            items:
+              - key: "index.html"
+                path: "index.html"
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

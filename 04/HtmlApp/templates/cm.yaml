@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ "cm-" }}{{ include "HtmlApp.fullname" . }}
+  labels:
+    {{- include "HtmlApp.labels" . | nindent 4 }}
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Halo</title>
+    </head>
+    <body>
+        Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam repudiandae iure quisquam, veritatis delectus repellat quam omnis tempora eum est explicabo qui exercitationem dolor incidunt totam, adipisci quaerat quasi nihil?
+    </body>
+    </html>
