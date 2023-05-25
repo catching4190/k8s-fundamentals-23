@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kfb5.fullname" . }}
+  labels:
+    {{- include "kfb5.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kfb5.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kfb5.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.storage.enabled }}
+      volumes:
+      - name: {{ .Values.deployment.volumeName }} 
+        configMap:
+          name: {{ include "kfb5.fullname" . }}-configmap
+          items:
+          - key: "html"
+            path: "index.html" 
+      {{- end }}
+      initContainers:
+        - name: init
+          image: "busybox"
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "kfb5.fullname" . }}-configmap
+                  key: log_level        
+          command: ["/bin/sh", "-c"]
+          args:
+            - if [[ -z "${LOG_LEVEL}" ]]; then 
+              echo "Failed to init. LOG_LEVEL env var should not be empty.";
+              exit 1;
+              else
+              echo "Init successful";
+              exit 0;
+              fi
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.containerPort }}
+              protocol: TCP
+          {{- if .Values.storage.enabled }}
+          volumeMounts:
+          - name: {{ .Values.deployment.volumeName }}
+            mountPath: {{ .Values.deployment.mountPath }}
+            readOnly: true
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+

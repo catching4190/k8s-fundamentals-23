@@ -644,3 +644,240 @@ helm upgrade chart-test ./HtmlApp --set "replicaCount=2"
 # override by file and, additionally, by value
 helm upgrade chart-test ./HtmlApp -f ./HtmlApp/values-dev.yaml --set "replicaCount=2"
 ```
+
+# Workshop 5 - Debug
+
+```bash
+# Try to simulate install
+helm install kfb5 ./kfb5 --dry-run # or use --generate-name instead kfb5
+
+# Render and output template even if error
+helm template --dry-run --debug kfb5 ./kfb5 > output.yaml
+
+# Fix indent in yaml file and install
+helm install kfb5 ./kfb5
+
+# Error: INSTALLATION FAILED: 1 error occurred:
+#     * Deployment.apps "kfb5-kfb5" is invalid: spec.template.spec.containers[0].resources.requests: Invalid value: "1128Mi": must be less than or equal to memory limit
+
+# Fix memory value in values.yaml and try again
+helm install kfb5 ./kfb5
+
+# Error: INSTALLATION FAILED: cannot re-use a name that is still in use
+
+# Will use upgrade
+helm upgrade kfb5 ./kfb5
+
+# Release "kfb5" has been upgraded. Happy Helming!
+# NAME: kfb5
+# LAST DEPLOYED: Thu May 25 13:33:11 2023
+# NAMESPACE: default
+# STATUS: deployed
+# REVISION: 2
+# TEST SUITE: None
+# NOTES:
+# 1. Get the application URL by using command 
+# kubectl port-forward service/kfb5 80:80
+
+
+# Check physical recourses we have
+kubectl describe node
+kubectl top node
+
+# Fix cpu values 64 -> 1
+helm upgrade kfb5 ./kfb5 --install
+
+# Release "kfb5" has been upgraded. Happy Helming!
+# NAME: kfb5
+# LAST DEPLOYED: Thu May 25 13:46:05 2023
+# NAMESPACE: default
+# STATUS: deployed
+# REVISION: 3
+# TEST SUITE: None
+# NOTES:
+# 1. Get the application URL by using command 
+# kubectl port-forward service/kfb5 80:80
+
+# Check
+kubectl get deploy
+
+# NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+# kfb5-kfb5   0/1     1            0           14m
+
+# Why here is 2 pods?
+kubectl get pods
+
+# NAME                         READY   STATUS                            RESTARTS   AGE
+# kfb5-kfb5-556bd849c-lnz52    0/1     Pending                           0          13m
+# kfb5-kfb5-6cdd9f564f-p4c8q   0/1     Init:CreateContainerConfigError   0          29s
+
+kubectl describe pod kfb5-kfb5-6cdd9f564f-p4c8q 
+
+# Name:             kfb5-kfb5-6cdd9f564f-p4c8q
+# Namespace:        default
+# Priority:         0
+# Service Account:  default
+# Node:             minikube/10.0.2.15
+# Start Time:       Thu, 25 May 2023 13:46:06 +0300
+# Labels:           app.kubernetes.io/instance=kfb5
+#                   app.kubernetes.io/name=kfb5
+#                   pod-template-hash=6cdd9f564f
+# Annotations:      <none>
+# Status:           Pending
+# IP:               10.244.0.236
+# IPs:
+#   IP:           10.244.0.236
+# Controlled By:  ReplicaSet/kfb5-kfb5-6cdd9f564f
+# Init Containers:
+#   init:
+#     Container ID:  
+#     Image:         busybox
+#     Image ID:      
+#     Port:          <none>
+#     Host Port:     <none>
+#     Command:
+#       /bin/sh
+#       -c
+#     Args:
+#       if [[ -z "${LOG_LEVEL}" ]]; then echo "Failed to init. LOG_LEVEL env var should not be empty."; exit 1; else echo "Init successful"; exit 0; fi
+#     State:          Waiting
+#       Reason:       CreateContainerConfigError
+#     Ready:          False
+#     Restart Count:  0
+#     Environment:
+#       LOG_LEVEL:  <set to the key 'log_level' of config map 'kfb5-kfb5-configmap'>  Optional: false
+#     Mounts:
+#       /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-d6pks (ro)
+# Containers:
+#   kfb5:
+#     Container ID:   
+#     Image:          ngnix:1.16.0
+#     Image ID:       
+#     Port:           8080/TCP
+#     Host Port:      0/TCP
+#     State:          Waiting
+#       Reason:       PodInitializing
+#     Ready:          False
+#     Restart Count:  0
+#     Limits:
+#       cpu:     1
+#       memory:  128Mi
+#     Requests:
+#       cpu:        1
+#       memory:     128Mi
+#     Environment:  <none>
+#     Mounts:
+#       /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-d6pks (ro)
+# Conditions:
+#   Type              Status
+#   Initialized       False 
+#   Ready             False 
+#   ContainersReady   False 
+#   PodScheduled      True 
+# Volumes:
+#   kube-api-access-d6pks:
+#     Type:                    Projected (a volume that contains injected data from multiple sources)
+#     TokenExpirationSeconds:  3607
+#     ConfigMapName:           kube-root-ca.crt
+#     ConfigMapOptional:       <nil>
+#     DownwardAPI:             true
+# QoS Class:                   Burstable
+# Node-Selectors:              <none>
+# Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+#                              node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+# Events:
+#   Type     Reason     Age                    From               Message
+#   ----     ------     ----                   ----               -------
+#   Normal   Scheduled  5m3s                   default-scheduler  Successfully assigned default/kfb5-kfb5-6cdd9f564f-p4c8q to minikube
+#   Normal   Pulled     4m54s                  kubelet            Successfully pulled image "busybox" in 7.727850919s (7.727854755s including waiting)
+#   Normal   Pulled     4m52s                  kubelet            Successfully pulled image "busybox" in 1.722123761s (1.722134242s including waiting)
+#   Normal   Pulled     4m37s                  kubelet            Successfully pulled image "busybox" in 1.707186746s (1.707255842s including waiting)
+#   Normal   Pulled     4m22s                  kubelet            Successfully pulled image "busybox" in 1.698566817s (1.698571241s including waiting)
+#   Normal   Pulled     4m7s                   kubelet            Successfully pulled image "busybox" in 1.663885208s (1.663891481s including waiting)
+#   Normal   Pulled     3m55s                  kubelet            Successfully pulled image "busybox" in 1.751082154s (1.751151929s including waiting)
+#   Normal   Pulled     3m41s                  kubelet            Successfully pulled image "busybox" in 1.724097364s (1.724169661s including waiting)
+>>> #   Warning  Failed     3m25s (x8 over 4m54s)  kubelet            Error: couldn't find key log_level in ConfigMap default/kfb5-kfb5-configmap
+#   Normal   Pulled     3m25s                  kubelet            Successfully pulled image "busybox" in 1.690343833s (1.690416543s including waiting)
+#   Normal   Pulling    3m14s (x9 over 5m2s)   kubelet            Pulling image "busybox"
+
+# Fix Error: couldn't find key log_level in ConfigMap in values.yaml
+# Read the package docs from registry, but in our case we can check deployment.yaml:37
+# IMPORTANT: take log_level value in quote ""
+helm upgrade kfb5 ./kfb5 --install
+
+# Release "kfb5" has been upgraded. Happy Helming!
+# NAME: kfb5
+# LAST DEPLOYED: Thu May 25 13:57:03 2023
+# NAMESPACE: default
+# STATUS: deployed
+# REVISION: 4
+# TEST SUITE: None
+# NOTES:
+# 1. Get the application URL by using command 
+# kubectl port-forward service/kfb5 80:80
+
+# Check again
+kubectl get pods
+kubectl describe pod
+
+# And ... fix image.repository
+helm upgrade kfb5 ./kfb5 --install
+
+# Check one more time
+kubectl get pods
+
+# NAME                         READY   STATUS    RESTARTS   AGE
+# kfb5-kfb5-6fd5f87f9b-gsgrg   0/1     Pending   0          9s
+# kfb5-kfb5-7766598c44-d7b6x   1/1     Running   0          2m50s
+
+# Sometimes, "0/1 nodes are available: 1 Insufficient cpu." happens for pending nodes. Try to iteratively reduce requests/limits cpu and re-install chart, or temporary scale up node.
+kubectl derscibe pod kfb5-kfb5-6fd5f87f9b-gsgrg
+
+# Stuck with forwarding port
+kubectl port-forward service/kfb5 80:80
+
+# Error from server (NotFound): services "kfb5" not found
+
+# Lets check services
+kubectl get services
+
+# NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+# kfb5-kfb5    ClusterIP   10.108.219.51   <none>        80/UDP    52m
+# kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP   13d
+
+kubectl port-forward service/kfb5-kfb5 80:80
+
+# error: UDP protocol is not supported for 80
+
+# Set services.protocol = TCP in values.yaml and deploy again
+helm upgrade kfb5 ./kfb5 --install
+
+# Error port not found, why 8080?
+kubectl port-forward service/kfb5-kfb5 80:80
+
+# Unable to listen on port 80: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:80: bind: permission denied unable to create listener: Error listen tcp6 [::1]:80: bind: permission denied]
+# error: unable to listen on any of the requested ports: [{80 8080}]
+
+# Lets fix deployment.containerPort = 80 and deploy again
+helm upgrade kfb5 ./kfb5 --install
+
+# Check port in containers
+kubectl describe pod 
+
+
+# Wrong page (default nginx) displayed. Check values.yaml -> storage.enabled, claimName in configmap.yaml is wrong (should be just name), and fix deployment.volumeName _ -> -
+
+helm list
+
+Release "kfb5" has been upgraded. Happy Helming!
+NAME: kfb5
+LAST DEPLOYED: Thu May 25 17:04:22 2023
+NAMESPACE: default
+STATUS: deployed
+REVISION: 14
+TEST SUITE: None
+NOTES:
+1. Get the application URL by using command 
+kubectl port-forward service/kfb5 80:80
+
+```

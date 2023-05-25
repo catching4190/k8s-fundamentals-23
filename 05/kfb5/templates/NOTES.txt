@@ -1,0 +1,2 @@
+1. Get the application URL by using command 
+kubectl port-forward service/kfb5 80:80
