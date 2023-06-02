@@ -97,6 +97,60 @@ minikube start --driver qemu --network builtin
 minikube start --driver qemu --network builtin --alsologtostderr -v=4
 ```
 
+### Using podman
+
+https://podman.io/docs/installation
+
+https://podman-desktop.io/downloads
+
+```bash
+brew install podman
+
+# It download the fedora-coreos-38.20230527.2.0-qemu.x86_64.qcow2.xz first time
+podman machine init
+
+# or you can set your specs
+podman machine init --cpus 2 --memory 12288 --disk-size 25
+
+# Need to do each time before minikube start
+podman machine start
+
+# Override VM configuration on existing VM
+# https://docs.podman.io/en/latest/markdown/podman-machine-set.1.html
+podman machine stop
+podman machine set cpus=4
+podman machine start
+
+# https://minikube.sigs.k8s.io/docs/drivers/podman/#known-issues
+podman system connection list
+podman system connection default podman-machine-default-root
+
+# Also volumes will be mounted there:
+# Mounting volume... /Users:/Users
+# Mounting volume... /private:/private
+# Mounting volume... /var/folders:/var/folders
+
+podman info
+
+# Remove
+podman machine stop
+podman machine rm
+brew remove podman
+```
+
+https://minikube.sigs.k8s.io/docs/drivers/podman/
+
+```bash
+minikube start --driver=podman
+
+# It’s recommended to run minikube with the podman driver and CRI-O container runtime (except when using Rootless Podman)
+minikube start --driver=podman --memory 8192 --cpus=4 --container-runtime=cri-o
+
+# To make podman the default driver:
+minikube config set driver podman
+
+```
+
 ### Stop minikube
 
 ```bash
