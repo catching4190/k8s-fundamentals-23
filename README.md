@@ -1025,3 +1025,15 @@ kubectl get services -n logging
 
 kubectl -n logging port-forward service/opensearch-dashboards 8081:5601
 ```
+
+## FluentBit
+
+```bash
+helm repo add fluent https://fluent.github.io/helm-charts
+helm repo update
+
+helm upgrade fluent-bit fluent/fluent-bit -f fluentbit_values.yaml -n logging --install
+
+# Open localhost:8200 use admin:admin and go to Dashboard and create index pattern,
+# then observe your logs and enjoy
+```
