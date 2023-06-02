@@ -1,0 +1,7 @@
+telepresence helm install
+
+telepresence connect
+
+telepresence list
+
+telepresence intercept kfb5 --port 8123:http --env-file example-service-intercept.env

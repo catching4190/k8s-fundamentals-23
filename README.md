@@ -935,3 +935,93 @@ NOTES:
 kubectl port-forward service/kfb5 80:80
 
 ```
+
+# Workshop 6
+
+Prerequirements:
+
+1. Setup and use Podman as driver for minikube
+2. Ensure cluster use increased memory limints and cpus=4. Recreate it if needed.
+
+```bash
+minikube start --driver=podman --memory 8192
+```
+
+## OpenSearch
+
+Opensearch – open source alternative ElasticSearch
+
+```bash
+# Add repo
+helm repo add opensearch https://opensearch-project.github.io/helm-charts/
+
+# Do it always
+helm repo update
+
+# Installing opensearch backend
+helm install opensearch opensearch/opensearch -n logging --create-namespace
+
+# -w means watch
+kubectl get pods --namespace=logging -l app.kubernetes.io/component=opensearch-cluster-master -w
+
+# Troubleshooting
+kubectl describe pods opensearch-cluster-master-0 --namespace=logging
+kubectl logs opensearch-cluster-master-0 --namespace=logging
+
+# ERROR: [1] bootstrap checks failed
+# [1]: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+# ERROR: OpenSearch did not exit normally - check the logs at /usr/share/opensearch/logs/opensearch-cluster.log
+
+# See requirements: https://opensearch.org/downloads.html
+
+# Solution: https://github.com/kubernetes/minikube/issues/1306
+minikube ssh 'echo "sysctl -w vm.max_map_count=262144" | sudo tee -a /var/lib/boot2docker/bootlocal.sh'
+
+# Also try to run in single node mode with 1 replicas. To do so:
+
+# Output values to file
+helm show values opensearch/opensearch > values.yaml
+
+# Edit file, and set singleNode: true and replicas: 1, maybe edit requested resources
+# Upgrade, using values.yaml
+helm upgrade opensearch opensearch/opensearch -f ./values.yaml -n logging
+
+# Info
+helm show values opensearch/opensearch # > values.yaml
+
+kubectl get persistentvolumes
+
+kubectl get services -n logging
+# NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+# opensearch-cluster-master            ClusterIP   10.105.187.56   <none>        9200/TCP,9300/TCP            60m
+# opensearch-cluster-master-headless   ClusterIP   None            <none>        9200/TCP,9300/TCP,9600/TCP   60m
+
+# Check connection
+kubectl exec --stdin --tty -n logging opensearch-cluster-master-0 -- /bin/bash
+curl -XGET https://localhost:9200 -u 'admin:admin' --insecure
+# curl: (7) Failed to connect to localhost port 9200 after 1216 ms: Couldn't connect to server
+
+# Forward port from services and check again
+kubectl -n logging port-forward service/opensearch-cluster-master 8080:9200
+
+curl -XGET https://localhost:8080 -u 'admin:admin' --insecure
+# OpenSearch Security not initialized.%   
+
+# Installing opensearch UI
+helm install opensearch-dashboards opensearch/opensearch-dashboards -n logging
+
+export POD_NAME=$(kubectl get pods --namespace logging -l "app.kubernetes.io/name=opensearch-dashboards,app.kubernetes.io/instance=opensearch-dashboards" -o jsonpath="{.items[0].metadata.name}")
+export CONTAINER_PORT=$(kubectl get pod --namespace logging $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+echo "Visit http://127.0.0.1:8080 to use your application"
+kubectl --namespace logging port-forward $POD_NAME 8200:$CONTAINER_PORT
+
+# Forward port to dashboard after pod starts
+kubectl get services -n logging
+# NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+# opensearch-cluster-master            ClusterIP   10.105.187.56   <none>        9200/TCP,9300/TCP            76m
+# opensearch-cluster-master-headless   ClusterIP   None            <none>        9200/TCP,9300/TCP,9600/TCP   76m
+# opensearch-dashboards                ClusterIP   10.101.148.63   <none>        5601/TCP                     39m
+
+
+kubectl -n logging port-forward service/opensearch-dashboards 8081:5601
+```

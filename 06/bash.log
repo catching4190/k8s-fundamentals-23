@@ -1,0 +1,249 @@
+❯ helm install opensearch opensearch/opensearch -n logging --create-namespace
+NAME: opensearch
+LAST DEPLOYED: Fri Jun  2 13:08:26 2023
+NAMESPACE: logging
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Watch all cluster members come up.
+  $ kubectl get pods --namespace=logging -l app.kubernetes.io/component=opensearch-cluster-master -w
+
+# First time OpenSearch pods won't to start at all.
+# Describe give me understanding that not enought resorces on my node.
+# But this is strange, because I set --cpus=2 when run minikube)
+
+❯ kubectl describe pods opensearch-cluster-master-0 -n=logging
+Events:
+  Type     Reason            Age    From               Message
+  ----     ------            ----   ----               -------
+  Warning  FailedScheduling  6m57s  default-scheduler  0/1 nodes are available: pod has unbound immediate PersistentVolumeClaims. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod..
+  Warning  FailedScheduling  6m56s  default-scheduler  0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod..
+  Warning  FailedScheduling  107s   default-scheduler  0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod..
+
+
+❯ kubectl get pods --namespace=logging -l app.kubernetes.io/component=opensearch-cluster-master -w
+NAME                          READY   STATUS    RESTARTS   AGE
+opensearch-cluster-master-0   0/1     Pending   0          5m6s
+opensearch-cluster-master-1   0/1     Pending   0          5m6s
+opensearch-cluster-master-2   0/1     Pending   0          5m6s
+
+
+# Here I several times edit values.yaml to search applicable configuration for my local node,
+# then it run.
+
+❯ helm upgrade opensearch opensearch/opensearch -f ./values.yaml -n logging
+Release "opensearch" has been upgraded. Happy Helming!
+NAME: opensearch
+LAST DEPLOYED: Fri Jun  2 13:31:25 2023
+NAMESPACE: logging
+STATUS: deployed
+REVISION: 4
+TEST SUITE: None
+NOTES:
+Watch all cluster members come up.
+  $ kubectl get pods --namespace=logging -l app.kubernetes.io/component=opensearch-cluster-master -w
+
+❯ kubectl get pods --namespace=logging -l app.kubernetes.io/component=opensearch-cluster-master -w
+NAME                          READY   STATUS    RESTARTS   AGE
+opensearch-cluster-master-0   0/1     Pending       0          0s
+opensearch-cluster-master-0   0/1     Init:0/1      0          0s
+opensearch-cluster-master-0   0/1     PodInitializing   0          6s
+opensearch-cluster-master-0   0/1     Running           0          86s
+opensearch-cluster-master-0   0/1     Running           0          110s
+opensearch-cluster-master-0   1/1     Running           0          110s
+opensearch-cluster-master-0   1/1     Terminating       0          3m31s
+opensearch-cluster-master-0   0/1     Terminating       0          5m32s
+opensearch-cluster-master-0   0/1     Terminating       0          5m32s
+opensearch-cluster-master-0   0/1     Terminating       0          5m32s
+opensearch-cluster-master-0   0/1     Pending           0          0s
+opensearch-cluster-master-0   0/1     Pending           0          0s
+opensearch-cluster-master-0   0/1     Init:0/1          0          0s
+opensearch-cluster-master-0   0/1     PodInitializing   0          1s
+opensearch-cluster-master-0   0/1     Running           0          2s
+opensearch-cluster-master-0   0/1     Running           0          20s
+opensearch-cluster-master-0   1/1     Running           0          20s
+
+❯ kubectl describe node
+Name:               minikube
+Roles:              control-plane
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=minikube
+                    kubernetes.io/os=linux
+                    minikube.k8s.io/commit=08896fd1dc362c097c925146c4a0d0dac715ace0
+                    minikube.k8s.io/name=minikube
+                    minikube.k8s.io/primary=true
+                    minikube.k8s.io/updated_at=2023_06_02T12_43_00_0700
+                    minikube.k8s.io/version=v1.30.1
+                    node-role.kubernetes.io/control-plane=
+                    node.kubernetes.io/exclude-from-external-load-balancers=
+Annotations:        kubeadm.alpha.kubernetes.io/cri-socket: unix:///var/run/crio/crio.sock
+                    node.alpha.kubernetes.io/ttl: 0
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Fri, 02 Jun 2023 12:42:56 +0300
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  minikube
+  AcquireTime:     <unset>
+  RenewTime:       Fri, 02 Jun 2023 13:34:05 +0300
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Fri, 02 Jun 2023 13:29:42 +0300   Fri, 02 Jun 2023 12:42:54 +0300   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Fri, 02 Jun 2023 13:29:42 +0300   Fri, 02 Jun 2023 12:42:54 +0300   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Fri, 02 Jun 2023 13:29:42 +0300   Fri, 02 Jun 2023 12:42:54 +0300   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Fri, 02 Jun 2023 13:29:42 +0300   Fri, 02 Jun 2023 12:43:22 +0300   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.49.2
+  Hostname:    minikube
+Capacity:
+  cpu:                2
+  ephemeral-storage:  25623532Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             12234664Ki
+  pods:               110
+Allocatable:
+  cpu:                2
+  ephemeral-storage:  25623532Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             12234664Ki
+  pods:               110
+System Info:
+  Machine ID:                 4be7b89512914632b7eb285a3ba7704a
+  System UUID:                4be7b89512914632b7eb285a3ba7704a
+  Boot ID:                    45630612-8771-4186-9287-ed6aa15ac75c
+  Kernel Version:             6.2.15-300.fc38.x86_64
+  OS Image:                   Ubuntu 20.04.5 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  cri-o://1.24.4
+  Kubelet Version:            v1.26.3
+  Kube-Proxy Version:         v1.26.3
+PodCIDR:                      10.244.0.0/24
+PodCIDRs:                     10.244.0.0/24
+Non-terminated Pods:          (13 in total)
+  Namespace                   Name                                         CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                         ------------  ----------  ---------------  -------------  ---
+  default                     chart-test-htmlapp-9d957f9fc-qlqk5           300m (15%)    500m (25%)  64Mi (0%)        128Mi (1%)     46m
+  kube-system                 coredns-787d4945fb-hz2w5                     100m (5%)     0 (0%)      70Mi (0%)        170Mi (1%)     50m
+  kube-system                 etcd-minikube                                100m (5%)     0 (0%)      100Mi (0%)       0 (0%)         51m
+  kube-system                 kindnet-fxczb                                100m (5%)     100m (5%)   50Mi (0%)        50Mi (0%)      50m
+  kube-system                 kube-apiserver-minikube                      250m (12%)    0 (0%)      0 (0%)           0 (0%)         51m
+  kube-system                 kube-controller-manager-minikube             200m (10%)    0 (0%)      0 (0%)           0 (0%)         51m
+  kube-system                 kube-proxy-6d5vm                             0 (0%)        0 (0%)      0 (0%)           0 (0%)         50m
+  kube-system                 kube-scheduler-minikube                      100m (5%)     0 (0%)      0 (0%)           0 (0%)         51m
+  kube-system                 metrics-server-6588d95b98-w59w4              100m (5%)     0 (0%)      200Mi (1%)       0 (0%)         48m
+  kube-system                 storage-provisioner                          0 (0%)        0 (0%)      0 (0%)           0 (0%)         51m
+  kubernetes-dashboard        dashboard-metrics-scraper-5c6664855-kncfq    0 (0%)        0 (0%)      0 (0%)           0 (0%)         48m
+  kubernetes-dashboard        kubernetes-dashboard-55c4cbbc7c-2tnml        0 (0%)        0 (0%)      0 (0%)           0 (0%)         48m
+  logging                     opensearch-cluster-master-0                  750m (37%)    0 (0%)      100Mi (0%)       0 (0%)         39s
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests    Limits
+  --------           --------    ------
+  cpu                2 (100%)    600m (30%)
+  memory             584Mi (4%)  348Mi (2%)
+  ephemeral-storage  0 (0%)      0 (0%)
+  hugepages-1Gi      0 (0%)      0 (0%)
+  hugepages-2Mi      0 (0%)      0 (0%)
+Events:
+  Type    Reason                   Age                From             Message
+  ----    ------                   ----               ----             -------
+  Normal  Starting                 50m                kube-proxy       
+  Normal  Starting                 32m                kube-proxy       
+  Normal  NodeHasSufficientMemory  51m (x4 over 51m)  kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal  NodeHasNoDiskPressure    51m (x4 over 51m)  kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal  NodeHasSufficientPID     51m (x4 over 51m)  kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal  NodeHasNoDiskPressure    51m                kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal  NodeAllocatableEnforced  51m                kubelet          Updated Node Allocatable limit across pods
+  Normal  NodeHasSufficientMemory  51m                kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal  NodeHasSufficientPID     51m                kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal  Starting                 51m                kubelet          Starting kubelet.
+  Normal  RegisteredNode           50m                node-controller  Node minikube event: Registered Node minikube in Controller
+  Normal  NodeReady                50m                kubelet          Node minikube status is now: NodeReady
+  Normal  Starting                 33m                kubelet          Starting kubelet.
+  Normal  NodeHasSufficientMemory  33m (x8 over 33m)  kubelet          Node minikube status is now: NodeHasSufficientMemory
+  Normal  NodeHasNoDiskPressure    33m (x8 over 33m)  kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  Normal  NodeHasSufficientPID     33m (x7 over 33m)  kubelet          Node minikube status is now: NodeHasSufficientPID
+  Normal  NodeAllocatableEnforced  33m                kubelet          Updated Node Allocatable limit across pods
+  Normal  RegisteredNode           32m                node-controller  Node minikube event: Registered Node minikube in Controller
+
+❯ kubectl top node
+NAME       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
+minikube   698m         34%    1449Mi          12%   
+
+❯ kubectl get pods -n logging
+NAME                          READY   STATUS    RESTARTS   AGE
+opensearch-cluster-master-0   1/1     Running   0          2m5s
+
+❯ kubectl get services -n logging
+NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+opensearch-cluster-master            ClusterIP   10.110.46.172   <none>        9200/TCP,9300/TCP            26m
+opensearch-cluster-master-headless   ClusterIP   None            <none>        9200/TCP,9300/TCP,9600/TCP   26m
+
+❯ kubectl exec --stdin --tty -n logging opensearch-cluster-master-0 -- /bin/bash
+
+[opensearch@opensearch-cluster-master-0 ~]$ curl -XGET https://localhost:9200 -u 'admin:admin' --insecure
+{
+  "name" : "opensearch-cluster-master-0",
+  "cluster_name" : "opensearch-cluster",
+  "cluster_uuid" : "zHZ3fRKLRNmPBdkQrAKi3w",
+  "version" : {
+    "distribution" : "opensearch",
+    "number" : "2.7.0",
+    "build_type" : "tar",
+    "build_hash" : "b7a6e09e492b1e965d827525f7863b366ef0e304",
+    "build_date" : "2023-04-27T21:43:09.523336706Z",
+    "build_snapshot" : false,
+    "lucene_version" : "9.5.0",
+    "minimum_wire_compatibility_version" : "7.10.0",
+    "minimum_index_compatibility_version" : "7.0.0"
+  },
+  "tagline" : "The OpenSearch Project: https://opensearch.org/"
+}
+[opensearch@opensearch-cluster-master-0 ~]$ exit
+exit
+
+
+# The same with opensearch-dashboard.
+# It won't start
+
+❯ kubectl get pods --namespace=logging -w
+
+NAME                                     READY   STATUS    RESTARTS   AGE
+opensearch-cluster-master-0              1/1     Running   0          22m
+opensearch-dashboards-7bb6b54544-nrcqr   0/1     Pending   0          91s
+
+# Output values and edit min & max replicas
+
+❯ kubectl describe pods opensearch-dashboards-7bb6b54544-nrcqr -n=logging
+
+Events:
+  Type     Reason            Age    From               Message
+  ----     ------            ----   ----               -------
+  Warning  FailedScheduling  11m    default-scheduler  0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod..
+  Warning  FailedScheduling  6m21s  default-scheduler  0/1 nodes are available: 1 Insufficient cpu. preemption: 0/1 nodes are available: 1 No preemption victims found for incoming pod..
+
+❯ helm show values opensearch/opensearch-dashboards > values-osd.yaml
+
+# Then upgade
+❯ helm upgrade opensearch-dashboards opensearch/opensearch-dashboards -f ./values-osd.yaml -n logging
+
+Release "opensearch-dashboards" has been upgraded. Happy Helming!
+NAME: opensearch-dashboards
+LAST DEPLOYED: Fri Jun  2 14:00:02 2023
+NAMESPACE: logging
+STATUS: deployed
+REVISION: 2
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace logging -l "app.kubernetes.io/name=opensearch-dashboards,app.kubernetes.io/instance=opensearch-dashboards" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace logging $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace logging port-forward $POD_NAME 8080:$CONTAINER_PORT

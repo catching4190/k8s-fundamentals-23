@@ -1,0 +1,19 @@
+# OpenSearch Repo:
+ helm repo add opensearch https://opensearch-project.github.io/helm-charts/
+ helm repo update
+
+# Installing opensearch backend
+ helm install opensearch opensearch/opensearch -n logging --create-namespace
+
+# INFO: curl -XGET https://localhost:9200 -u 'admin:admin' --insecure
+# INFO: helm show values opensearch/opensearch
+
+# Installing opensearch UI
+ helm install opensearch-dashboards opensearch/opensearch-dashboards -n logging
+
+# Fluent Repo:
+ helm repo add fluent https://fluent.github.io/helm-charts
+ helm repo update
+
+# INFO: https://github.com/fluent/helm-charts/blob/main/charts/fluent-bit/values.yaml
+ helm upgrade fluent-bit fluent/fluent-bit -f fluentbit_values.yaml -n logging --install
