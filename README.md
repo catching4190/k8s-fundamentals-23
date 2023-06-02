@@ -1068,3 +1068,13 @@ node app.js
 # Disable intercepting anc check output on localhost:8080 again
 telepresence leave
 ```
+
+# Cleanup
+
+```bash
+telepresence helm uninstall
+brew remove datawire/blackbird/telepresence
+
+minikube stop
+podman machine stop
+```
