@@ -1037,3 +1037,34 @@ helm upgrade fluent-bit fluent/fluent-bit -f fluentbit_values.yaml -n logging --
 # Open localhost:8200 use admin:admin and go to Dashboard and create index pattern,
 # then observe your logs and enjoy
 ```
+
+## Telepresence
+
+Set up your ideal development environment for Kubernetes in seconds. Accelerate your inner development loop with hot reload using your existing IDE, and workflow.
+
+https://www.getambassador.io/docs/telepresence/latest/install
+
+```bash
+brew install datawire/blackbird/telepresence
+
+telepresence helm install
+
+telepresence connect
+
+telepresence dashboard # login ?
+
+telepresence status
+
+# Run app from 05/kfb5
+helm install kfb5 ./kfb5
+
+telepresence list
+
+telepresence intercept kfb5 --port 8123:http --env-file example-service-intercept.env
+
+# Then run some server on localhost, that listen port 8123 and check output on localhost:8080
+node app.js
+
+# Disable intercepting anc check output on localhost:8080 again
+telepresence leave
+```

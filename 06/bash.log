@@ -247,3 +247,41 @@ NOTES:
   export CONTAINER_PORT=$(kubectl get pod --namespace logging $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
   echo "Visit http://127.0.0.1:8080 to use your application"
   kubectl --namespace logging port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+❯ telepresence helm install
+Launching Telepresence User Daemon
+
+Traffic Manager installed successfully
+
+❯ telepresence connect
+Launching Telepresence Root Daemon
+Need root privileges to run: /usr/local/bin/telepresence daemon-foreground /Users/vglazhevskyi/Library/Logs/telepresence '/Users/vglazhevskyi/Library/Application Support/telepresence'
+Password:
+Connected to context minikube (https://127.0.0.1:36631)
+
+❯ telepresence list
+chart-test-htmlapp: ready to intercept (traffic-agent not yet installed)
+
+❯ telepresence intercept chart-test-htmlapp --port 8123:http --env-file example-service-intercept.env
+Using Deployment chart-test-htmlapp
+   Intercept name         : chart-test-htmlapp
+   State                  : ACTIVE
+   Workload kind          : Deployment
+   Destination            : 127.0.0.1:8123
+   Service Port Identifier: http
+   Volume Mount Error     : sshfs is not installed on your local machine
+   Intercepting           : all TCP requests
+Intercepting all traffic to your service. To route a subset of the traffic instead, use a personal intercept. You can enable personal intercepts by authenticating to Ambassador Cloud with "telepresence login".
+
+❯ telepresence list
+chart-test-htmlapp: intercepted
+   Intercept name         : chart-test-htmlapp
+   State                  : ACTIVE
+   Workload kind          : Deployment
+   Destination            : 127.0.0.1:8123
+   Service Port Identifier: http
+   Intercepting           : all TCP requests
+
+❯ node app.js
+Server running at http://127.0.0.1:8123/
